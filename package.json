@@ -1,0 +1,24 @@
+{
+  "name": "mssql-query-tool",
+  "version": "1.0.0",
+  "description": "Simple query tool for mssql",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "keywords": [
+    "mssql",
+    "query-tool",
+    "ssms",
+    "linux"
+  ],
+  "author": "Nardin, Alan",
+  "license": "ISC",
+  "dependencies": {
+    "mssql": "^6.3.1"
+  }
+}
