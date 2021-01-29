@@ -6,12 +6,54 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-let config = {
-    server: '',
-    database: '',
-    username: '',
-    password: '',
-    connection_string: ''
+rl._writeToOutput = (stringToWrite) => {
+    rl.output.write(rl.maskInput ? "*" : stringToWrite);
+};
+
+rl.on("close", function () {
+    process.exit(0);
+});
+
+let config = { server: '', database: '', user: '', connection_string: '' }
+
+function onFailed(color, message, callback){
+    console.clear();
+    console.log(color, message);
+    console.log("\x1b[0m");
+    callback();
+}
+
+function runQuery (query) {
+
+        sql.connect(config.connection_string, err_conn =>{
+
+            if(err_conn){
+                onFailed("\x1b[31m", "Connection failed", main);
+                return;
+            }
+
+            new sql.Request().query(query, (err_query, res) =>{
+
+                if(err_query){
+                    sql.close();
+                    onFailed("\x1b[33m", "Invalid query", startConsole);
+                    return;
+                }
+
+                if (res.recordsets) {
+                    res.recordsets.forEach(recordset => { console.table(recordset) });
+                }
+
+                if (res.rowsAffected.length) {
+                    console.log("\x1b[0m");
+                    console.log(`Rows affected: ${res.rowsAffected[0]}`);
+                    console.log("\x1b[0m");
+                }
+
+                sql.close();
+                startConsole();
+            });
+        });
 }
 
 function startConsole() {
@@ -30,94 +72,51 @@ function startConsole() {
                 startConsole();
                 break;
             default: {
-                let exec = sql.connect(config.connection_string).then((pool) => { return pool.query(query) });
-
-                exec.then(res => {
-                    if (res.recordsets) {
-                        res.recordsets.forEach(recordset => { console.table(recordset) });
-                    }
-                    if (res.rowsAffected) {
-                        console.log("\x1b[0m");
-                        console.log(`Rows affected: ${res.rowsAffected}`);
-                        console.log("\x1b[0m");
-                    }
-                });
-
-                exec.catch(() => {
-                    console.log("\x1b[33m", 'Invalid query');
-                    console.log("\x1b[0m");
-
-                });
-
-                exec.finally(() => {
-                    sql.close();
-                    startConsole();
-                });
+                runQuery(query);
             }
         }
     });
 }
 
+function onConnect(pwd){
+
+        rl.maskInput = false;
+        rl.history = [];
+
+        config.connection_string = `Server=${config.server};Database=${config.database};User Id=${config.user};Password=${pwd}`;
+
+        sql.connect(config.connection_string, err =>{
+            if(err){
+                onFailed("\x1b[31m", "Connection failed", main);
+                return;
+            }
+            sql.close();
+            console.clear();
+            console.log("\x1b[32m", 'Successfully connected');
+            console.log("\x1b[0m");
+            startConsole();
+        });
+    
+}
+
 function main() {
 
-    rl.question("Server> ", function (server) {
-        rl.question("Database> ", function (database) {
-            rl.question("User> ", function (user) {
+    rl.question("Server> ", (server) => {
+        config.server = server;
+        rl.question("Database> ", (database) => {
+            config.database = database;
+            rl.question("User> ", (user) => {
+                config.user = user;
 
                 rl.setPrompt("Password> ");
                 rl.prompt();
 
-                rl.stdoutMuted = true;
+                rl.maskInput = true;
 
-                rl.on('line', password => {
-
-                    rl.stdoutMuted = false;
-                    rl.history = [];
-
-                    config.server = server;
-                    config.database = database;
-                    config.user = user;
-                    config.password = password;
-                    config.connection_string = `Server=${server};Database=${database};User Id=${user};Password=${password}`;
-
-                    let onFailed = () => {
-                        console.clear();
-                        console.log("\x1b[31m", 'Connection failed');
-                        console.log("\x1b[0m");
-                        main();
-                    }
-
-                    let conn = sql.connect(config.connection_string);
-
-                    conn.then(pool =>{
-
-                        let exec = pool.query('SELECT 1');
-
-                        exec.then(() => {
-                            console.clear();
-                            console.log("\x1b[32m", 'Successfully connected');
-                            console.log("\x1b[0m");
-                            startConsole();
-                        });
-    
-                        exec.catch(onFailed);
-                        exec.finally(() => { sql.close(); });
-
-                    });
-
-                    conn.catch(onFailed);
-                });
+                rl.on('line', onConnect);
             });
         });
     });
 }
-
-rl._writeToOutput = (stringToWrite) => {
-    rl.output.write(rl.stdoutMuted ? "*" : stringToWrite);
-};
-
-rl.on("close", function () {
-    process.exit(0);
-});
 
 main();
