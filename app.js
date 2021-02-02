@@ -18,8 +18,7 @@ let config = { server: '', database: '', user: '', connection_string: '' }
 
 function onFailed(color, message, callback){
     console.clear();
-    console.log(color, message);
-    console.log("\x1b[0m");
+    console.log(color, message, "\x1b[0m");
     callback();
 }
 
@@ -45,9 +44,7 @@ function runQuery (query) {
                 }
 
                 if (res.rowsAffected.length) {
-                    console.log("\x1b[0m");
                     console.log(`Rows affected: ${res.rowsAffected[0]}`);
-                    console.log("\x1b[0m");
                 }
 
                 sql.close();
@@ -58,7 +55,7 @@ function runQuery (query) {
 
 function startConsole() {
 
-    rl.question(`${config.server}@${config.database}:Query> `, function (query) {
+    rl.question(`\x1b[36m${config.server}@${config.database}:Query>\x1b[0m `, function (query) {
 
         switch (query.toLowerCase()) {
             case 'quit':
@@ -92,8 +89,7 @@ function onConnect(pwd){
             }
             sql.close();
             console.clear();
-            console.log("\x1b[32m", 'Successfully connected');
-            console.log("\x1b[0m");
+            console.log("\x1b[32m", 'Successfully connected', "\x1b[0m");
             startConsole();
         });
     
@@ -101,14 +97,14 @@ function onConnect(pwd){
 
 function main() {
 
-    rl.question("Server> ", (server) => {
+    rl.question("\x1b[36mServer>\x1b[0m ", (server) => {
         config.server = server;
-        rl.question("Database> ", (database) => {
+        rl.question("\x1b[36mDatabase>\x1b[0m ", (database) => {
             config.database = database;
-            rl.question("User> ", (user) => {
+            rl.question("\x1b[36mUser>\x1b[0m ", (user) => {
                 config.user = user;
 
-                rl.setPrompt("Password> ");
+                rl.setPrompt("\x1b[36mPassword>\x1b[0m ");
                 rl.prompt();
 
                 rl.maskInput = true;
