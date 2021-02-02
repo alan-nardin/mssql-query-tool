@@ -10,3 +10,7 @@ $ cd mssql-query-tool
 $ npm install
 $ npm start
 ```
+
+### Example:
+---
+![Usage example](example.gif)
